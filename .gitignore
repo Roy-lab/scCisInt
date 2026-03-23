@@ -1,0 +1,65 @@
+# macOS
+**/.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Linux
+*~
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*.sublime-project
+*.sublime-workspace
+
+# Compiled / build output
+build/
+dist/
+out/
+*.o
+*.a
+*.so
+*.dylib
+*.exe
+*.dll
+
+# Logs
+*.log
+logs/
+
+# Environment & secrets
+.env
+.env.*
+*.pem
+*.key
+
+# Dependency directories
+node_modules/
+vendor/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+*.cmake
+
+# Archives
+*.zip
+*.tar.gz
+*.tgz
+*.rar

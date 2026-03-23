@@ -1,84 +1,69 @@
-#!/bin/sh
-# script for execution of deployed applications
+#!/bin/bash
+# run_scATAC_EPpredict_stability_RF.sh
 #
-# Sets up the MCR environment for the current $ARCH and executes 
-# the specified command.
+# Runs the full scCisInt EP-prediction pipeline for a single gene on one chromosome.
 #
-# Add these lines to run_foo.sh
-tar xzf r2014b.tar.gz
-mkdir cache
-export MCR_CACHE_ROOT=`pwd`/cache
+# Usage:
+#   bash run_scATAC_EPpredict_stability_RF.sh <gene_name> <ntrees> <pseudobulk_matrix> <chr> [outdir]
+#
+# Arguments:
+#   gene_name         Gene symbol (e.g. Sox5)
+#   ntrees            Number of trees for the Random Forest (e.g. 500)
+#   pseudobulk_matrix Path to the cluster-mean accessibility matrix (clusters x bins, TSV)
+#   chr               Chromosome (e.g. chr6)
+#   outdir            Output directory (optional; default: Results)
+#
+# Dependencies: R (with data.table, dplyr), MATLAB
 
-# untar your R installation. Make sure you are using the right version!
-if [[ ! -f /usr/bin/R ]];then
-echo "R not installed"
-tar -xzf R351.tar.gz
+set -euo pipefail
 
-# make sure the script will use your R installation, 
-# and the working directory as its home location
-export PATH=$PWD/R/bin:$PATH
-export RHOME=$PWD/R
-fi
-## R packages:
-# (optional) if you have a set of packages (created in Part 1), untar them also
-tar -xzf packages.tar.gz
-export R_LIBS=$PWD/packages
+GENE=$1
+NTREES=$2
+NMFDATA=$3
+CHR=$4
+OUTDIR=${5:-Results}
 
-genename=$2
-nseed=$3
-nmfdata=$4
-chr=$5
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-###################################################################################
-## Step 1: prepare data
-echo Rscript --vanilla scATAC_EPpredict_prepData_forgenes.R $genename $nmfdata $chr
-Rscript --vanilla scATAC_EPpredict_prepData_forgenes.R $genename $nmfdata $chr
+mkdir -p "$OUTDIR"
 
+###############################################################################
+## Step 1: Prepare per-gene enhancer/promoter data
+###############################################################################
+echo "=== Step 1: Preparing data for gene: $GENE ==="
 
-###################################################################################
-## Step 2: make predictions using RF
-exe_name=$0
-exe_dir=`dirname "$0"`
-echo "------------------------------------------"
-if [ "x$1" = "x" ]; then
-  echo Usage:
-  echo    $0 \<deployedMCRroot\> args
-else
-  echo Setting up environment variables
-  MCRROOT="$1"
-  echo ---
-  LD_LIBRARY_PATH=.:${MCRROOT}/runtime/glnxa64 ;
-  LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${MCRROOT}/bin/glnxa64 ;
-  LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${MCRROOT}/sys/os/glnxa64;
-  LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${MCRROOT}/sys/opengl/lib/glnxa64;
-  export LD_LIBRARY_PATH;
-  echo LD_LIBRARY_PATH is ${LD_LIBRARY_PATH};
-  shift 1
-  args=
-  while [ $# -gt 0 ]; do
-      token=$1
-      args="${args} \"${token}\"" 
-      shift
-  done
-  echo "\"${exe_dir}/scATAC_EPpredict_stability_RF\"" $genename $nseed
-  eval "\"${exe_dir}/scATAC_EPpredict_stability_RF\"" $genename $nseed
+GENEBINFILE="${SCRIPT_DIR}/example/example_in/Mus_musculus.GRCm38.74.TSS_trans2gene2bin_morebins_${CHR}.txt"
+
+Rscript --vanilla "${SCRIPT_DIR}/scCisInt_preprocessing_prep_data_by_gene.R" \
+    "$GENE" "$NMFDATA" "$GENEBINFILE" 1000000 "$OUTDIR"
+
+###############################################################################
+## Step 2: Run Random Forest predictions for each region associated with the gene
+###############################################################################
+echo "=== Step 2: Running RF predictions ==="
+
+# Each region produced by step 1 has a corresponding _enhancer_data.txt file.
+# Loop over all such files and call scCisInt_EP_predict for each region.
+shopt -s nullglob
+ENHANCER_FILES=("${OUTDIR}"/*_enhancer_data.txt)
+
+if [ ${#ENHANCER_FILES[@]} -eq 0 ]; then
+    echo "ERROR: No enhancer data files found in ${OUTDIR}. Did step 1 succeed?"
+    exit 1
 fi
 
-###################################################################################
-## Step 3: map predictions to peaks of interest
-Rscript --vanilla scATAC_EPpredict_mergePred.R $genename $chr
+for enhfile in "${ENHANCER_FILES[@]}"; do
+    region=$(basename "$enhfile" "_enhancer_data.txt")
+    echo "  Predicting region: $region"
+    matlab -batch \
+        "addpath('${SCRIPT_DIR}'); scCisInt_EP_predict('${region}', ${NTREES}, '${OUTDIR}/', '${OUTDIR}/', true)"
+done
 
-#outpath=Results/
-#bin1kb5kbfile=${outpath}/${genename}_bin1kbs_bin5kbs.txt
-#cat $bin5kbfile | while read bin1kb bin5kb; 
-#do
-  #echo $bin1kb $bin5kb
-  #predfile=${outpath}/${genename}_${bin1kb}_bins_prediction.txt
-  #hicfile=${outpath}/${bin5kb}.txt
-  #$bedtools/bedtools intersect -a $predfile -b $hicfile -wo | awk '$9>0' > $outpath/${genename}_${bin1kb}_enhancers_map.txt
-#done
+###############################################################################
+## Step 3: Map predictions to peaks of interest
+###############################################################################
+echo "=== Step 3: Merging predictions ==="
 
+Rscript --vanilla "${SCRIPT_DIR}/scATAC_EPpredict_mergePred.R" "$GENE" "$CHR"
 
-tar cvzf Results.tar.gz Results/
-exit
-
+echo "=== Done. Results written to ${OUTDIR}/ ==="
