@@ -1,6 +1,6 @@
 function [consensus_matrix]=makeConsensusMatrix(dir, U_file, V_file, num_iterations, outdir)
 for i=1:num_iterations
-    i
+    i;
     cell_clust=importdata(sprintf('%s/I_%i/%s', dir, i, U_file));
     gene_clust=importdata(sprintf('%s/I_%i/%s', dir, i, V_file));
     
@@ -21,11 +21,11 @@ for i=1:num_iterations
 
     end
  
-    if i==1
+    if i==1;
         consensus_matrix=zeros(length(cell_clust), length(gene_clust));
     end
     for j=1:length(unique(cell_clust))
-        j
+        j;
         cellidx=find(cell_clust==j);
         geneidx=find(gene_clust==j);
         rowidx=repmat(cellidx, length(geneidx),1);
@@ -37,13 +37,13 @@ end
 
 mkdir(outdir)
 
-save(sprintf('%s/consensus_matrix.mat',outdir), 'consensus_matrix')
-writematrix(consensus_matrix, sprintf('%s/consensus_matrix.txt', outdir), "Delimiter", 'tab')
+save(sprintf('%s/consensus_matrix.mat',outdir), 'consensus_matrix');
+writematrix(consensus_matrix, sprintf('%s/consensus_matrix.txt', outdir), "Delimiter", 'tab');
 
 [~,sort_gene_idx]=sort(gene_clust);
 [~,sort_cell_idx]=sort(cell_clust);
 
 imagesc(consensus_matrix(sort_cell_idx, sort_gene_idx));
-saveas(gcf(),sprintf('%s/consensus_matrix_sorted.png', dir))
+saveas(gcf(),sprintf('%s/consensus_matrix_sorted.png', dir));
 
 

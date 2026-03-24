@@ -1,10 +1,10 @@
-function run_nmf(DataFile, k, outdir,  vargin)
+function run_nmf(DataFile, k, outdir, varargin)
 
-A = import_data(DataFile); 
-[U, V] = nmf(A, k, vargin) 
+A = importdata(DataFile); 
+[U, V] = nmf(A, k, varargin{:}); 
 
-writematrix(U, sprintf('%s/U.txt', outdir))
-writematrix(V', sprintf('%s/V.txt', outdir))
+writematrix(U, sprintf('%s/U.txt', outdir));
+writematrix(V', sprintf('%s/V.txt', outdir));
 
 [~, U_assign] = max(U, [], 2); 
 [~, V_assign] = max(V',[], 2);

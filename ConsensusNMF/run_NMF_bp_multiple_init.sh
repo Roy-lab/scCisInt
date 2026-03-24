@@ -21,7 +21,7 @@ elif [[ $CHOOSE == "matlab" ]]; then
         outdir="${outdir_head}/I_${i}"
         # Proper quoting for matlab command
         echo "matlab -nodisplay -r \"addpath('$MATLAB_DIR'); run_nmf('$DATA', $k, '$outdir'); exit;\""
-	matlab -nodisplay -r "addpath('$MATLAB_DIR'); run_nmf('$DATA', $k, '$outdir'); exit;"
+	matlab -nodisplay -r "addpath('$MATLAB_DIR'); rng($i); run_nmf('$DATA', $k, '$outdir'); exit;"
     done
 
 fi
