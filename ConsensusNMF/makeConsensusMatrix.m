@@ -1,4 +1,4 @@
-function [consensus_matrix]=makeConsensusMatrix(dir, U_file, V_file, num_iterations, outdir)
+function makeConsensusMatrix(dir, U_file, V_file, num_iterations, outdir)
 for i=1:num_iterations
     i;
     cell_clust=importdata(sprintf('%s/I_%i/%s', dir, i, U_file));
@@ -35,7 +35,7 @@ for i=1:num_iterations
     end
 end
 
-mkdir(outdir)
+mkdir(outdir);
 
 save(sprintf('%s/consensus_matrix.mat',outdir), 'consensus_matrix');
 writematrix(consensus_matrix, sprintf('%s/consensus_matrix.txt', outdir), "Delimiter", 'tab');
