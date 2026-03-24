@@ -119,4 +119,4 @@ echo ""
 echo "=== Done. ${N_INIT} initializations written to: $OUTDIR_HEAD"
 echo ""
 echo "    Next: run Step 2 (makeConsensusMatrix) across the I_* directories."
-echo "    Wrapper: ./2_run_make_consensus_matrix.sh $CHOOSE $k $N_INIT
+echo "    Wrapper: ./2_run_make_consensus_matrix.sh $CHOOSE $k $N_INIT"

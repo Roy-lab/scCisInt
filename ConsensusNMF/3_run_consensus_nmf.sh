@@ -90,5 +90,5 @@ fi
 echo ""
 echo "=== Done. Consensus matrix and factorization written to: $OUTDIR"
 echo ""
-echo "    Next: run Step 2 (makeConsensusMatrix) across the I_* directories, then:"
-echo "    bash run_consensus_nmf.sh $CHOOSE $k $N_ROWS $N_COLS"
+echo "    Run Step 4 pseudobulk generation:"
+echo "    ./4_run_make_pseudobulk_matrix.sh $CHOOSE $k "  

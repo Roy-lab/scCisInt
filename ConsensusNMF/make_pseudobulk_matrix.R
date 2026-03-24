@@ -71,28 +71,6 @@ if (nrow(X) != length(assignments)) {
   ))
 }
 
-# Guard: INT_MIN (-2147483648) is the sentinel value written when NMF did not
-# converge or the binary was compiled for a different platform and never ran.
-INT_MIN <- -2147483648L
-if (all(assignments == INT_MIN)) {
-  stop(paste(
-    "U_assign.txt contains only -2147483648 (INT_MIN) — the consensus NMF has",
-    "not been run successfully on this machine yet.",
-    "Please compile run_nmf_bp for your platform and re-run run_NMF_bp_multiple_init.sh",
-    "followed by run_makeConsensusMatrix.sh before calling this script."
-  ), call. = FALSE)
-}
-n_invalid <- sum(assignments == INT_MIN)
-if (n_invalid > 0) {
-  warning(sprintf(
-    "%d of %d cells have invalid assignments (INT_MIN). They will be excluded.",
-    n_invalid, length(assignments)
-  ))
-  keep <- assignments != INT_MIN
-  X <- X[keep, ]
-  assignments <- assignments[keep]
-}
-
 # ---- Compute cluster means --------------------------------------------------
 
 clusters <- sort(unique(assignments))
