@@ -1,5 +1,5 @@
 #!/bin/bash
-# run_NMF_bp_multiple_init.sh
+# 1_run_NMF_bp_multiple_init.sh
 #
 # Step 1 of the ConsensusNMF pipeline.
 # Runs NMF from N independent random initializations to sample the solution space.
@@ -107,9 +107,10 @@ elif [[ "$CHOOSE" == "matlab" ]]; then
 
     for i in $(seq 1 "$N_INIT"); do
         outdir="${OUTDIR_HEAD}/I_${i}"
+	mkdir -p $outdir
         echo "  [matlab] Init ${i}/${N_INIT}  seed=${i}  →  $outdir"
         matlab -nodisplay -r \
-            "addpath('${MATLAB_DIR}'); rng(${i}); run_nmf('${DATA}', ${k}, '${outdir}'); exit;"
+            "addpath('${MATLAB_DIR}'); rng(${i}); run_nmf('${DATA}', ${k}, '${outdir}', 'ALPHA', $ALPHA, 'BETA', $BETA); exit;"
     done
 
 fi
@@ -117,5 +118,5 @@ fi
 echo ""
 echo "=== Done. ${N_INIT} initializations written to: $OUTDIR_HEAD"
 echo ""
-echo "    Next: run Step 2 (makeConsensusMatrix) across the I_* directories, then:"
-echo "    bash run_consensus_nmf.sh $CHOOSE $k $N_ROWS $N_COLS"
+echo "    Next: run Step 2 (makeConsensusMatrix) across the I_* directories."
+echo "    Wrapper: ./2_run_make_consensus_matrix.sh $CHOOSE $k $N_INIT

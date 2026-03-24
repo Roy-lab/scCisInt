@@ -44,7 +44,7 @@ outfile     <- args[4]
 message("Reading ATAC-seq matrix: ", atac_file)
 # Auto-detect separator (comma for the example data, whitespace otherwise)
 first_line <- readLines(atac_file, n = 1)
-sep <- if (grepl(",", first_line)) "," else ""
+sep <- if (grepl(",", first_line)) "," else "\t"
 X <- fread(atac_file, header = FALSE, sep = sep)
 
 message("  Matrix dimensions: ", nrow(X), " cells x ", ncol(X), " bins")

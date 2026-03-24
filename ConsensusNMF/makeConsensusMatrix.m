@@ -35,7 +35,15 @@ for i=1:num_iterations
     end
 end
 
-mkdir(outdir);
+
+if isempty(outdir)
+    error('outdir is empty');
+end
+
+if ~isfolder(outdir)
+    mkdir(outdir);
+end
+
 
 save(sprintf('%s/consensus_matrix.mat',outdir), 'consensus_matrix');
 writematrix(consensus_matrix, sprintf('%s/consensus_matrix.txt', outdir), "Delimiter", 'tab');
@@ -44,6 +52,6 @@ writematrix(consensus_matrix, sprintf('%s/consensus_matrix.txt', outdir), "Delim
 [~,sort_cell_idx]=sort(cell_clust);
 
 imagesc(consensus_matrix(sort_cell_idx, sort_gene_idx));
-saveas(gcf(),sprintf('%s/consensus_matrix_sorted.png', dir));
+saveas(gcf(),sprintf('%s/consensus_matrix_sorted.png', outdir));
 
 

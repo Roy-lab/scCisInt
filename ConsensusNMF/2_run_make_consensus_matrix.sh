@@ -1,5 +1,5 @@
 #!/bin/bash
-# run_make_consensus_matrix.sh
+# 2_run_make_consensus_matrix.sh
 #
 # Step 2 of the ConsensusNMF pipeline.
 # Combines N independent NMF results with different random initilaizations. 
@@ -21,15 +21,15 @@
 #  example/example_out/<prefix>/cpp/consensus 
 #
 # Next step:
-#   bash run_consensus_nmf.sh <cpp|matlab|both> <k> <nRows> <nCols>
+#   bash run_consensus_nmf.sh <cpp|matlab|both> <k> 
 
 set -euo pipefail 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # ── Arguments ─────────────────────────────────────────────────────────────────
 
-CHOOSE=${1:?"ERROR: Missing required argument. Usage: run_make_consensus_matrix.sh <cpp|matlab> <k>"}
-k=${2:?"ERROR: Missing required argument. Usage: bash run_make_consensus_matrix.sh <cpp|matlab> <k>"}
+CHOOSE=${1:?"ERROR: Missing required argument. Usage: run_make_consensus_matrix.sh <cpp|matlab> <k> [n_init]"}
+k=${2:?"ERROR: Missing required argument. Usage: bash run_make_consensus_matrix.sh <cpp|matlab> <k> [n_init]"}
 N_INIT=${3:-10}
 
 if [[ "$CHOOSE" != "cpp" && "$CHOOSE" != "matlab" ]]; then
@@ -76,4 +76,4 @@ echo ""
 echo "=== Done. Consensus matrix written to $OUTDIR"
 echo ""
 echo "    Next: run Step 3 run_consensus_nmf.sh"
-echo "    bash run_consensus_nmf.sh $CHOOSE $k $N_ROWS $N_COLS"
+echo "    bash run_consensus_nmf.sh $CHOOSE $k"

@@ -11,15 +11,15 @@
 # is computed for every genomic bin, producing a clusters x bins matrix.
 #
 # Usage:
-#   bash run_make_pseudobulk_matrix.sh <cpp|matlab|both> <k>
+#   bash run_make_pseudobulk_matrix.sh <cpp|matlab> <k>
 #
 # Arguments:
-#   cpp|matlab|both   Which consensus output to use (must match Steps 1-3).
+#   cpp|matlab   Which consensus output to use (must match Steps 1-3).
 #   k                 Number of NMF factors.
 #
 # Output:
-#   example/example_out/<prefix>/cpp/pseudobulk_<prefix>.txt    (cpp or both)
-#   example/example_out/<prefix>/matlab/pseudobulk_<prefix>.txt (matlab or both)
+#   example/example_out/<prefix>/cpp/pseudobulk_<prefix>.txt    (cpp)
+#   example/example_out/<prefix>/matlab/pseudobulk_<prefix>.txt (matlab)
 
 set -euo pipefail
 
@@ -27,11 +27,11 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # ── Arguments ─────────────────────────────────────────────────────────────────
 
-CHOOSE=${1:?"ERROR: Missing required argument. Usage: bash run_make_pseudobulk_matrix.sh <cpp|matlab|both> <k>"}
-k=${2:?"ERROR: Missing required argument. Usage: bash run_make_pseudobulk_matrix.sh <cpp|matlab|both> <k>"}
+CHOOSE=${1:?"ERROR: Missing required argument. Usage: bash run_make_pseudobulk_matrix.sh <cpp|matlab> <k>"}
+k=${2:?"ERROR: Missing required argument. Usage: bash run_make_pseudobulk_matrix.sh <cpp|matlab> <k>"}
 
-if [[ "$CHOOSE" != "cpp" && "$CHOOSE" != "matlab" && "$CHOOSE" != "both" ]]; then
-    echo "ERROR: First argument must be 'cpp', 'matlab', or 'both', got: '$CHOOSE'"
+if [[ "$CHOOSE" != "cpp" && "$CHOOSE" != "matlab" ]]; then
+    echo "ERROR: First argument must be 'cpp', 'matlab', got: '$CHOOSE'"
     exit 1
 fi
 
@@ -96,12 +96,12 @@ done
 
 # ── Run ───────────────────────────────────────────────────────────────────────
 
-if [[ "$CHOOSE" == "cpp" || "$CHOOSE" == "both" ]]; then
+if [[ "$CHOOSE" == "cpp" ]]; then
     run_pseudobulk_for_impl "cpp"
     echo ""
 fi
 
-if [[ "$CHOOSE" == "matlab" || "$CHOOSE" == "both" ]]; then
+if [[ "$CHOOSE" == "matlab" ]]; then
     run_pseudobulk_for_impl "matlab"
     echo ""
 fi
