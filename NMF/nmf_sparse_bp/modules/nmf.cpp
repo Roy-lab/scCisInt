@@ -204,11 +204,11 @@ NMF::fit(gsl_matrix *inputmat, gsl_matrix *U, gsl_matrix *V)
         gradH = gsl_matrix_calloc(H->size1, H->size2);
 
         getGradient();
-        io::write_dense_matrix("tmp/gradW.txt", gradW);
-        io::write_dense_matrix("tmp/gradH.txt", gradH);
-        io::write_dense_matrix("tmp/W.txt", W);
-        io::write_dense_matrix("tmp/H.txt", H);
-        io::write_dense_matrix("tmp/data.txt", A);
+        //io::write_dense_matrix("tmp/gradW.txt", gradW);
+        //io::write_dense_matrix("tmp/gradH.txt", gradH);
+        //io::write_dense_matrix("tmp/W.txt", W);
+        //io::write_dense_matrix("tmp/H.txt", H);
+        //io::write_dense_matrix("tmp/data.txt", A);
 
         double initSC = getStartValue();
         double SC = numeric_limits<double>::infinity();
