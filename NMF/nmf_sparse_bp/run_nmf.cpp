@@ -43,29 +43,29 @@ int mkdir_recursive(const std::string &dir) {
 int
 main(int argc, char **argv)
 {
-        struct timeval beginTime;
-        struct timeval factorTime;
-        struct timeval endTime;
-        gettimeofday(&beginTime, NULL);
+	struct timeval beginTime;
+	struct timeval factorTime;
+	struct timeval endTime;
+	gettimeofday(&beginTime, NULL);
 
-        struct rusage bUsage;
-        struct rusage eUsage;
-        getrusage(RUSAGE_SELF, &bUsage);
+	struct rusage bUsage;
+	struct rusage eUsage;
+	getrusage(RUSAGE_SELF, &bUsage);
 
-        string matrixFile;
-        int nSamples = -1;
-        int nFeatures = -1;
-        int nComponents = -1;
+	string matrixFile;
+	int nSamples = -1;
+	int nFeatures = -1;
+	int nComponents = -1;
 
-        string outputPrefix = string(".");
-        string inPrefix = string("");
-        int seed = 1010;
-        int verbose = false;
-        int maxIter = 100;
-        int minIter = 20;
-        double tol = 1e-3;
-        double alpha = 0.1;
-        double beta = 0.1;
+	string outputPrefix = string(".");
+	string inPrefix = string("");
+	int seed = 1010;
+	int verbose = false;
+	int maxIter = 100;
+	int minIter = 20;
+	double tol = 1e-3;
+	double alpha = 0.1;
+	double beta = 0.1;
 
 	method_type method = block_pivot;
 	reg_type reg = sparse;
@@ -92,7 +92,7 @@ main(int argc, char **argv)
 		{0,0,0,0}
 	};
 
-        string usage = string("usage.txt");
+	string usage = string("usage.txt");
 	string reg_in = "";
 	string stop_in = "";
 	int c;
@@ -141,22 +141,33 @@ main(int argc, char **argv)
 	}
 
 
-        const gsl_rng_type *T;
-        gsl_rng *ri;
-        gsl_rng_env_setup();
-        T = gsl_rng_default;
-        ri = gsl_rng_alloc(T);
-        gsl_rng_set(ri, seed);
+	const gsl_rng_type *T;
+	gsl_rng *ri;
+	gsl_rng_env_setup();
+	T = gsl_rng_default;
+	ri = gsl_rng_alloc(T);
+	gsl_rng_set(ri, seed);
 
 
 
-        //Read Initial Matrix
-        gsl_matrix *X = gsl_matrix_calloc(nSamples, nFeatures);
-        int read_fail = io::read_dense_matrix(matrixFile, X);
+	//Read Initial Matrix
+	gsl_matrix *X = gsl_matrix_calloc(nSamples, nFeatures);
+	int read_fail = io::read_dense_matrix(matrixFile, X);
 	if (read_fail != 0)
+	{
+		cout << "Failed to read input data file." << endl;
+		return -1;
+	}
+	if (utils::is_all_zeros(X, "Data"))
 	{
 		return -1;
 	}
+	if (utils::has_nan(X, "Data"))
+	{
+		return -1;
+	}
+
+
 
         gsl_matrix *U = gsl_matrix_calloc(nSamples, nComponents);
         gsl_matrix *V = gsl_matrix_calloc(nComponents, nFeatures);
@@ -169,6 +180,14 @@ main(int argc, char **argv)
         } else
         {
                 io::read_prev_results(inPrefix, U, V);
+        	if (utils::is_all_zeros(U, "Previous U"))
+        	{
+        		return -1;
+        	}
+        	if (utils::is_all_zeros(V, "Previous V"))
+        	{
+        		return -1;
+        	}
         }
 
         stringstream out_dir_str;
@@ -187,17 +206,12 @@ main(int argc, char **argv)
 
         NMF nmf = NMF(nComponents, reg, method, stop, maxIter, minIter, verbose, tol, alpha, beta);
 	nmf.setSize(nSamples, nFeatures);
-        //gett
-        //imeofday(&factorTime, NULL);
+
 
         nmf.fit(X, U, V);
+	gettimeofday(&factorTime, NULL);
+
 	nmf.assignClusters();
-
-        //stringstream out_dir_str;
-        //out_dir_str << outputPrefix << "/k_" << nComponents << "/";
-        //string out_dir=out_dir_str.str();
-        //mkdir(out_dir.c_str(), 0766);
-
 
         gettimeofday(&endTime, NULL);
 
@@ -207,6 +221,18 @@ main(int argc, char **argv)
         unsigned long int ft = factorTime.tv_sec;
         unsigned long int et = endTime.tv_sec;
 
+	unsigned long int totalSeconds  = et - bt;
+	unsigned long int hours         = totalSeconds / 3600;
+	unsigned long int minutes       = (totalSeconds % 3600) / 60;
+	unsigned long int seconds       = totalSeconds % 60;
+
+	cout << "Total time elapsed: ";
+	if (hours > 0)
+		cout << hours << "h ";
+	if (hours > 0 || minutes > 0)
+		cout << minutes << "m ";
+	cout << seconds << "s" << endl;
+
         cout << "Total time elapsed: " << et - bt << " seconds" << endl;
 
         unsigned long int bu = bUsage.ru_maxrss;
@@ -214,7 +240,7 @@ main(int argc, char **argv)
 
         cout << "Memory usage: " << (eu - bu) / 1000 << "MB" << endl;
 
-        io::write_mem_and_time(out_dir + "usage.txt", et - ft, (eu - bu) / 1000);
+        io::write_mem_and_time(out_dir + "usage.txt", et - bt, (eu - bu) / 1000);
         io::write_nmf_output(U, V, out_dir);
 
 	vector<int>* U_clusters = nmf.getRowClusters();

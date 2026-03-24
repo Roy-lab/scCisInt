@@ -94,9 +94,7 @@ io::read_dense_matrix(string inputFile, gsl_matrix *X)
         ifstream input(inputFile.c_str());
         string buffstr;
         string tok;
-
         double val;
-
 
         if (!input.is_open())
         {
@@ -104,20 +102,98 @@ io::read_dense_matrix(string inputFile, gsl_matrix *X)
                 return -1;
         }
 
+        // --- Check file is tab-delimited ---
+        // Peek at the first line, then rewind so the main loop sees it too.
+        if (getline(input, buffstr))
+        {
+                if (buffstr.find('\t') == string::npos)
+                {
+                        cerr << "Error: file does not appear to be tab-delimited: "
+                             << inputFile << endl;
+                        cerr << "  First line preview: "
+                             << buffstr.substr(0, 80) << endl;
+                        input.close();
+                        return -1;
+                }
+                input.seekg(0);
+        }
+
         int rowid = 0;
-        int colid = 0;
         while (getline(input, buffstr))
         {
+                // --- Row bounds check ---
+                if (rowid >= rowNum)
+                {
+                        cerr << "Error: " << inputFile << " has more rows than expected ("
+                             << rowNum << ")." << endl;
+                        input.close();
+                        return -1;
+                }
+
                 stringstream ss(buffstr);
-                colid = 0;
+                int colid = 0;
                 while (getline(ss, tok, '\t'))
                 {
-                        val = stod(tok);
+                        // Skip empty tokens produced by trailing tabs.
+                        if (tok.empty()) { continue; }
+
+                        // --- Column bounds check ---
+                        if (colid >= colNum)
+                        {
+                                cerr << "Error: row " << rowid << " of " << inputFile
+                                     << " has more columns than expected (" << colNum << ")." << endl;
+                                input.close();
+                                return -1;
+                        }
+
+                        // --- Safe numeric parse ---
+                        try
+                        {
+                                val = stod(tok);
+                        }
+                        catch (const invalid_argument &)
+                        {
+                                cerr << "Error: non-numeric value \"" << tok
+                                     << "\" at row " << rowid << ", col " << colid
+                                     << " in " << inputFile << endl;
+                                input.close();
+                                return -1;
+                        }
+                        catch (const out_of_range &)
+                        {
+                                cerr << "Error: value out of double range \"" << tok
+                                     << "\" at row " << rowid << ", col " << colid
+                                     << " in " << inputFile << endl;
+                                input.close();
+                                return -1;
+                        }
+
                         gsl_matrix_set(X, rowid, colid, val);
                         colid++;
                 }
+
+                // --- Column count check ---
+                if (colid != colNum)
+                {
+                        cerr << "Error: row " << rowid << " of " << inputFile
+                             << " has " << colid << " column(s) but expected "
+                             << colNum << "." << endl;
+                        input.close();
+                        return -1;
+                }
+
                 rowid++;
         }
+
+        // --- Row count check ---
+        if (rowid != rowNum)
+        {
+                cerr << "Error: " << inputFile << " has " << rowid
+                     << " row(s) but expected " << rowNum << "." << endl;
+                input.close();
+                return -1;
+        }
+
         input.close();
         return 0;
 }

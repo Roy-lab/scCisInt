@@ -204,11 +204,11 @@ NMF::fit(gsl_matrix *inputmat, gsl_matrix *U, gsl_matrix *V)
         gradH = gsl_matrix_calloc(H->size1, H->size2);
 
         getGradient();
-        //io::write_dense_matrix("tmp/gradW.txt", gradW);
-        //io::write_dense_matrix("tmp/gradH.txt", gradH);
-        //io::write_dense_matrix("tmp/W.txt", W);
-        //io::write_dense_matrix("tmp/H.txt", H);
-        //io::write_dense_matrix("tmp/data.txt", A);
+        io::write_dense_matrix("tmp/gradW.txt", gradW);
+        io::write_dense_matrix("tmp/gradH.txt", gradH);
+        io::write_dense_matrix("tmp/W.txt", W);
+        io::write_dense_matrix("tmp/H.txt", H);
+        io::write_dense_matrix("tmp/data.txt", A);
 
         double initSC = getStartValue();
         double SC = numeric_limits<double>::infinity();
@@ -222,11 +222,13 @@ NMF::fit(gsl_matrix *inputmat, gsl_matrix *U, gsl_matrix *V)
                 {
                         //Run to Optimize
                         nnlsm(W, A, H, gradH);
+                        if (utils::has_nan(H, "H iter " + to_string(n_iter))) { return -1; }
                         gsl_matrix_transpose_memcpy(Wt, W);
                         gsl_matrix_transpose_memcpy(Ht, H);
                         nnlsm(Ht, At, Wt, gradWt);
                         gsl_matrix_transpose_memcpy(W, Wt);
                         gsl_matrix_transpose_memcpy(gradW, gradWt);
+                        if (utils::has_nan(W, "W iter " + to_string(n_iter))) { return -1; }
 
                         //Check conditions
                         getGradient();
@@ -272,10 +274,12 @@ NMF::fit(gsl_matrix *inputmat, gsl_matrix *U, gsl_matrix *V)
                 appendRows(A_append, A, zerokn);
                 appendRows(At_append, At, zerokm);
 
+                bool nan_found = false;
                 for (int n_iter = 0; n_iter < max_iter; n_iter++)
                 {
                         appendRows(W_append, W, sbetaI);
                         nnlsm(W_append, A_append, H, gradH);
+                        if (utils::has_nan(H, "H iter " + to_string(n_iter))) { nan_found = true; break; }
 
                         gsl_matrix_transpose_memcpy(Wt, W);
                         gsl_matrix_transpose_memcpy(Ht, H);
@@ -284,6 +288,7 @@ NMF::fit(gsl_matrix *inputmat, gsl_matrix *U, gsl_matrix *V)
                         nnlsm(Ht_append, At_append, Wt, gradWt);
                         gsl_matrix_transpose_memcpy(W, Wt);
                         gsl_matrix_transpose_memcpy(gradW, gradWt);
+                        if (utils::has_nan(W, "W iter " + to_string(n_iter))) { nan_found = true; break; }
 
                         //Check conditions
                         getGradient();
@@ -322,6 +327,7 @@ NMF::fit(gsl_matrix *inputmat, gsl_matrix *U, gsl_matrix *V)
                 gsl_matrix_free(Ht_append);
                 gsl_matrix_free(A_append);
                 gsl_matrix_free(At_append);
+                if (nan_found) { return -1; }
 
         } else if (type == sparse)
         {
@@ -340,10 +346,12 @@ NMF::fit(gsl_matrix *inputmat, gsl_matrix *U, gsl_matrix *V)
                 appendRows(At_append, At, zerokm);
 
 
+                bool nan_found = false;
                 for (int n_iter = 0; n_iter < max_iter; n_iter++)
                 {
                         appendRows(W_append, W, sbetaE);
                         nnlsm(W_append, A_append, H, gradH);
+                        if (utils::has_nan(H, "H iter " + to_string(n_iter))) { nan_found = true; break; }
                         //io::write_dense_matrix("tmp/H.txt", H);
 
                         gsl_matrix_transpose_memcpy(Wt, W);
@@ -353,6 +361,7 @@ NMF::fit(gsl_matrix *inputmat, gsl_matrix *U, gsl_matrix *V)
                         nnlsm(Ht_append, At_append, Wt, gradWt);
                         gsl_matrix_transpose_memcpy(W, Wt);
                         gsl_matrix_transpose_memcpy(gradW, gradWt);
+                        if (utils::has_nan(W, "W iter " + to_string(n_iter))) { nan_found = true; break; }
                         //io::write_dense_matrix("tmp/W.txt", W);
 
                         //Check conditions
@@ -392,6 +401,7 @@ NMF::fit(gsl_matrix *inputmat, gsl_matrix *U, gsl_matrix *V)
                 gsl_matrix_free(Ht_append);
                 gsl_matrix_free(A_append);
                 gsl_matrix_free(At_append);
+                if (nan_found) { return -1; }
 
 
         } else
@@ -538,14 +548,23 @@ NMF::setSize(int NSamp, int NFeat)
 int 
 NMF::rescaleVectors() //Rescale W to unit norm 
 {
+
 	int k = W->size2;
-	for(int i = 0; i < k; i++)
+
+
+        for(int i = 0; i < k; i++)
 	{
+		gsl_matrix_view W_col_mat = gsl_matrix_submatrix(W, 0, i, W->size1, 1);
+		if (utils::is_all_zeros(&W_col_mat.matrix, "W column " + to_string(i)))
+		{
+			continue;
+		}
+
 		gsl_vector_view W_i_view = gsl_matrix_column(W, i);
 		gsl_vector_view H_i_view = gsl_matrix_row(H, i);
 		double norm = gsl_blas_dnrm2(&W_i_view.vector);
 		gsl_vector_scale(&W_i_view.vector, 1/norm);
-		gsl_vector_scale(&H_i_view.vector, norm);  
+		gsl_vector_scale(&H_i_view.vector, norm);
 	}
 	return 0;
 }
